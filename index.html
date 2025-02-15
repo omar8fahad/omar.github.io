@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>أذكار الصباح والمساء</title>
+  <style>
+    /* بعض إعدادات Material Design البسيطة */
+    body {
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+      background-color: #fafafa;
+      direction: rtl;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .hidden { display: none; }
+
+    /* شاشة البداية */
+    .landing {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background: linear-gradient(135deg, #1976d2, #42a5f5); /* تدرج من الأزرق */
+      color: #fff;
+    }
+    .landing h1 {
+      margin-bottom: 40px;
+      font-size: 2em;
+    }
+    .btn {
+      width: 220px;
+      padding: 15px;
+      margin: 10px;
+      border: none;
+      border-radius: 4px;
+      font-size: 18px;
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      transition: background-color 0.3s, transform 0.2s;
+    }
+    .btn:hover { transform: scale(1.02); }
+    .btn:active { transform: scale(0.98); }
+    /* زر الصباح والأمس بألوان محددة */
+    .btn.morning {
+      background-color: #1976d2;
+    }
+    .btn.morning:hover {
+      background-color: #1565c0;
+    }
+    .btn.evening {
+      background-color: #d32f2f;
+    }
+    .btn.evening:hover {
+      background-color: #c62828;
+    }
+
+    /* شاشة عرض الأذكار */
+    #adhkarPage h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .adhkar-list {
+      max-height: 70vh;
+      overflow-y: auto;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .dhikr-item {
+      background: #fff;
+      margin: 10px 0;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      cursor: pointer;
+      position: relative;
+    }
+    .dhikr-item.active {
+      transform: scale(1.1);
+      background-color: #e3f2fd;
+    }
+    /* تأثير انتهاء العد */
+    .dhikr-item.completed {
+      animation: completedAnimation 0.5s ease-out;
+      background-color: #a5d6a7;
+    }
+    @keyframes completedAnimation {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+      100% { transform: scale(1); }
+    }
+    .click-counter {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background-color: #ffeb3b;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #000;
+      font-size: 14px;
+    }
+    #backButton {
+      background-color: #757575;
+      margin-top: 20px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <!-- شاشة البداية -->
+  <div class="landing" id="landing">
+    <h1>أذكار الصباح والمساء</h1>
+    <button class="btn morning" id="btnMorning">أذكار الصباح</button>
+    <button class="btn evening" id="btnEvening">أذكار المساء</button>
+  </div>
+
+  <!-- شاشة عرض الأذكار -->
+  <div class="container hidden" id="adhkarPage">
+    <h2 id="pageTitle"></h2>
+    <ul class="adhkar-list" id="adhkarList">
+      <!-- ستظهر العناصر هنا ديناميكيًا -->
+    </ul>
+    <button class="btn" id="backButton">العودة</button>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      /* بيانات الأذكار؛ تم استخراجها من نص "أذكار الصباح والمساء" المُقدم */
+      const morningAdhkar = [
+        { text: "1- الْحَمْدُ لِلَّهِ وَحْدَهُ، وَالصَّلاَةُ وَالسَّلاَمُ عَلَى مَنْ لاَ نَبِيَّ بَعْدَهُ. (مرة واحدة)", count: 0, max: 1 },
+        { text: "2- آية الكرسي: {اللَّهُ لاَ إِلَهَ إِلاَّ هُوَ الْحَيُّ الْقَيُّومُ لاَ تَأْخُذُهُ سِنَةٌ وَلاَ نَوْمٌ...} (مرة واحدة)", count: 0, max: 1 },
+        { text: "3- سورة الإخلاص: {قُلْ هُوَ اللَّهُ أَحَدٌ* اللَّهُ الصَّمَدُ* لَمْ يَلِدْ وَلَمْ يُولَدْ...} (ثلاث مرات)", count: 0, max: 3 },
+        { text: "4- سورة الفلق: {قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ* مِن شَرِّ مَا خَلَقَ...} (ثلاث مرات)", count: 0, max: 3 },
+        { text: "5- سورة الناس: {قُلْ أَعُوذُ بِرَبِّ النَّاسِ* مَلِكِ النَّاسِ...} (ثلاث مرات)", count: 0, max: 3 },
+        { text: "6- أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ، ... رَبِّ أَسْأَلُكَ خَيْرَ مَا فِي هَذَا الْيَوْمِ... (مرة واحدة)\n   وفي المساء يقول: أَمْسَيْنَا وَأَمْسَا الْمُلْكُ لِلَّهِ... (مرة واحدة)", count: 0, max: 1 },
+        { text: "7- اللَّهُمَّ بِكَ أَصْبَحْنَا، وَبِكَ نَحْيَا... (مرة واحدة)\n   وفي المساء يقول: اللَّهُمَّ بِكَ أَمْسَيْنَا... (مرة واحدة)", count: 0, max: 1 },
+        { text: "8- اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلاَّ أَنْتَ، خَلَقْتَنِي... (مرة واحدة)", count: 0, max: 1 },
+        { text: "9- اللَّهُمَّ إِنِّي أَصْبَحْتُ أُشْهِدُكَ... (أربع مرات)\n   وفي المساء يقول: اللَّهُمَّ إِنِّي أمسيت أُشْهِدُكَ... (أربع مرات)", count: 0, max: 4 },
+        { text: "10- اللَّهُمَّ مَا أَصْبَحَ بِي مِنْ نِعْمَةٍ... (مرة واحدة)\n    وفي المساء يقول: اللَّهُمَّ مَا أَمسى بِي مِنْ نِعْمَةٍ... (مرة واحدة)", count: 0, max: 1 },
+        { text: "11- اللَّهُمَّ عَافِنِي فِي بَدَنِي،... (ثلاث مرات)", count: 0, max: 3 },
+        { text: "12- حَسْبِيَ اللَّهُ لاَ إِلَهَ إِلاَّ هُوَ... (سبع مرات)", count: 0, max: 7 },
+        { text: "13- اللَّهُمَّ إِنِّي أَسْأَلُكَ الْعَفْوَ وَالْعَافِيَةَ... (مرة واحدة)", count: 0, max: 1 },
+        { text: "14- اللَّهُمَّ عَالِمَ الغَيْبِ وَالشَّهَادَةِ... (مرة واحدة)", count: 0, max: 1 },
+        { text: "15- بِسْمِ اللَّهِ الَّذِي لاَ يَضُرُّ... (ثلاث مرات)", count: 0, max: 3 },
+        { text: "16- رَضِيتُ بِاللَّهِ رَبَّاً، وَبِالْإِسْلاَمِ دِيناً... (ثلاث مرات)", count: 0, max: 3 },
+        { text: "17- يَا حَيُّ يَا قَيُّومُ... (مرة واحدة)", count: 0, max: 1 },
+        { text: "18- أَصْبَحْنَا عَلَى فِطْرَةِ الْإسْلاَمِ... (مرة واحدة)\n    وفي المساء يقول: أَمْسينا عَلَى فِطْرَةِ الْإسْلاَمِ... (مرة واحدة)", count: 0, max: 1 },
+        { text: "19- سُبْحَانَ اللَّهِ وَبِحَمْدِهِ... (مئة مرة)", count: 0, max: 100 },
+        { text: "20- لاَ إِلَهَ إِلاَّ اللَّهُ وَحْدَهُ... (عشر مرات أو مرة واحدة)", count: 0, max: 10 },
+        { text: "21- لاَ إِلَهَ إِلاَّ اللَّهُ، وَحْدَهُ... في الصباح (مئة مرة)", count: 0, max: 100 },
+        { text: "22- سُبْحَانَ اللَّهِ وَبِحَمْدِهِ: عَدَدَ خَلْقِهِ... (ثلاث مرات)", count: 0, max: 3 },
+        { text: "23- اللَّهُمَّ إِنِّي أَسْأَلُكَ عِلْماً نَافِعاً... في الصباح (مرة واحدة)", count: 0, max: 1 },
+        { text: "24- أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ... (مئة مرة)", count: 0, max: 100 },
+        { text: "25- أَعُوذُ بِكَلِمَاتِ اللَّهِ التَّامَّاتِ... في المساء (ثلاث مرات)", count: 0, max: 3 },
+        { text: "26- اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبَيِّنَا مُحَمَّدٍ... (عشر مرات)", count: 0, max: 10 }
+      ];
+
+      /* لإنشاء أذكار المساء نقوم باستبدال بعض الكلمات الخاصة بالصباح */
+      const eveningAdhkar = morningAdhkar.map(item => {
+        let newText = item.text;
+        newText = newText.replace(/أَصْبَحْ/g, "أَمْسَى");
+        newText = newText.replace(/أَصْبَحَ/g, "أَمْسَى");
+        newText = newText.replace(/بِكَ أَصْبَحْنَا/g, "بِكَ أَمْسَيْنَا");
+        newText = newText.replace(/فِي هَذَا الْيَوْمِ/g, "فِي هَذِهِ اللَّيْلَةِ");
+        return { text: newText, count: 0, max: item.max };
+      });
+
+      const landing = document.getElementById('landing');
+      const adhkarPage = document.getElementById('adhkarPage');
+      const adhkarList = document.getElementById('adhkarList');
+      const pageTitle = document.getElementById('pageTitle');
+      const backButton = document.getElementById('backButton');
+
+      let currentAdhkar = [];
+
+      // دالة لتشغيل تأثير صوتي عند النقر باستخدام Web Audio API
+      function playClickSound() {
+        const context = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = context.createOscillator();
+        const gainNode = context.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(context.destination);
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(440, context.currentTime);
+        gainNode.gain.setValueAtTime(0.1, context.currentTime);
+        oscillator.start();
+        oscillator.stop(context.currentTime + 0.1);
+      }
+
+      // دالة لتحديد العنصر النشط أثناء التمرير
+      function updateActiveItem() {
+        const items = document.querySelectorAll('.dhikr-item');
+        let closest = null;
+        let closestDistance = Infinity;
+        const containerRect = adhkarList.getBoundingClientRect();
+        const containerCenter = containerRect.top + containerRect.height / 2;
+
+        items.forEach(item => {
+          const rect = item.getBoundingClientRect();
+          const itemCenter = rect.top + rect.height / 2;
+          const distance = Math.abs(containerCenter - itemCenter);
+          if(distance < closestDistance) {
+            closestDistance = distance;
+            closest = item;
+          }
+          item.classList.remove('active');
+        });
+        if(closest) {
+          closest.classList.add('active');
+        }
+      }
+
+      // دالة لعرض قائمة الأذكار
+      function renderAdhkar() {
+        adhkarList.innerHTML = "";
+        currentAdhkar.forEach((adhkar, index) => {
+          const li = document.createElement('li');
+          li.className = 'dhikr-item';
+          li.innerHTML = `
+            <div class="click-counter">${adhkar.count}</div>
+            <div class="dhikr-text">${adhkar.text.replace(/\n/g, "<br>")}</div>
+          `;
+          li.addEventListener('click', () => {
+            // إذا لم يصل العداد للسقف بعد
+            if(currentAdhkar[index].count < currentAdhkar[index].max) {
+              currentAdhkar[index].count++;
+              li.querySelector('.click-counter').textContent = currentAdhkar[index].count;
+              playClickSound();
+              if (navigator.vibrate) {
+                navigator.vibrate(50);
+              }
+              li.style.transform = 'scale(1.2)';
+              setTimeout(() => { li.style.transform = ''; }, 150);
+              // إذا وصل العداد للسقف بعد التحديث
+              if(currentAdhkar[index].count === currentAdhkar[index].max) {
+                li.classList.add('completed');
+              }
+            } else {
+              // يمكن إضافة منطق إضافي إذا رغب المستخدم بإعادة العد مثلاً
+              console.log("تم الوصول للحد الأقصى لهذا الذكر");
+            }
+          });
+          adhkarList.appendChild(li);
+        });
+        updateActiveItem();
+      }
+
+      // تحديث العنصر النشط أثناء التمرير
+      adhkarList.addEventListener('scroll', updateActiveItem);
+
+      // التعامل مع أزرار اختيار الصباح والمساء
+      document.getElementById('btnMorning').addEventListener('click', () => {
+        currentAdhkar = JSON.parse(JSON.stringify(morningAdhkar));
+        pageTitle.textContent = "أذكار الصباح";
+        landing.classList.add('hidden');
+        adhkarPage.classList.remove('hidden');
+        renderAdhkar();
+      });
+
+      document.getElementById('btnEvening').addEventListener('click', () => {
+        currentAdhkar = JSON.parse(JSON.stringify(eveningAdhkar));
+        pageTitle.textContent = "أذكار المساء";
+        landing.classList.add('hidden');
+        adhkarPage.classList.remove('hidden');
+        renderAdhkar();
+      });
+
+      backButton.addEventListener('click', () => {
+        adhkarPage.classList.add('hidden');
+        landing.classList.remove('hidden');
+      });
+    });
+  </script>
+</body>
+</html>
