@@ -506,55 +506,41 @@ function initializeSettings() {
 function scheduleNotifications() {
     if (!appSettings.notifications.enabled) return;
 
-    // تحويل أوقات التنبيه إلى كائنات Date
-    const now = new Date();
-    const morningTime = new Date();
-    const eveningTime = new Date();
-    
-    // تحديث التواريخ بالأوقات المحددة
-    const [morningHours, morningMinutes] = appSettings.notifications.morningTime.split(':');
-    const [eveningHours, eveningMinutes] = appSettings.notifications.eveningTime.split(':');
-    
-    morningTime.setHours(parseInt(morningHours), parseInt(morningMinutes), 0);
-    eveningTime.setHours(parseInt(eveningHours), parseInt(eveningMinutes), 0);
-
-    // إذا مر وقت اليوم، جدول لليوم التالي
-    if (morningTime < now) {
-        morningTime.setDate(morningTime.getDate() + 1);
-    }
-    if (eveningTime < now) {
-        eveningTime.setDate(eveningTime.getDate() + 1);
-    }
-
-    // التحقق من الوقت كل دقيقة
-    setInterval(() => {
-        const currentTime = new Date();
+    function checkTime() {
+        const now = new Date();
+        const currentHours = now.getHours();
+        const currentMinutes = now.getMinutes();
         
-        // تنسيق الوقت الحالي للمقارنة
-        const currentTimeStr = currentTime.getHours().toString().padStart(2, '0') + ':' + 
-                             currentTime.getMinutes().toString().padStart(2, '0');
+        // تنسيق الوقت الحالي
+        const currentTimeStr = `${currentHours.toString().padStart(2, '0')}:${currentMinutes.toString().padStart(2, '0')}`;
         
-        // تنبيه الصباح
+        // فحص وقت الصباح
         if (currentTimeStr === appSettings.notifications.morningTime) {
             showNotification('أذكار الصباح', 'حان وقت أذكار الصباح');
             playNotificationSound();
+            if (appSettings.vibration.enabled) {
+                navigator.vibrate(1000);
+            }
         }
         
-        // تنبيه المساء
+        // فحص وقت المساء
         if (currentTimeStr === appSettings.notifications.eveningTime) {
             showNotification('أذكار المساء', 'حان وقت أذكار المساء');
             playNotificationSound();
+            if (appSettings.vibration.enabled) {
+                navigator.vibrate(1000);
+            }
         }
-    }, 60000); // فحص كل دقيقة
-}
-
-// تشغيل صوت التنبيه
-function playNotificationSound() {
-    if (appSettings.sound.enabled) {
-        const audio = new Audio('sounds/notification.mp3');
-        audio.volume = appSettings.sound.volume / 100;
-        audio.play();
     }
+
+    // فحص فوري عند تفعيل التنبيهات
+    checkTime();
+    
+    // فحص كل دقيقة
+    const intervalId = setInterval(checkTime, 30000);
+    
+    // حفظ معرف الفاصل الزمني للتمكن من إيقافه لاحقاً إذا تم تعطيل التنبيهات
+    window.notificationInterval = intervalId;
 }
 
 // Initialize settings when DOM is loaded
