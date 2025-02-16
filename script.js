@@ -554,13 +554,12 @@ function scheduleNotifications() {
         if (now >= morningTime && now < new Date(morningTime.getTime() + 1000)) {
             if (lastMorningTrigger !== currentDay) {
                 showNotification('أذكار الصباح', 'حان وقت أذكار الصباح');
-                if (appSettings.sound.enabled) {
-                    const audio = new Audio('sounds/notification.mp3');
-                    audio.volume = appSettings.sound.volume / 100;
-                    audio.play().catch(console.error);
-                }
-                if (appSettings.vibration.enabled && navigator.vibrate) {
-                    navigator.vibrate(1000);
+                const audio = new Audio('sounds/notification.mp3');
+                audio.volume = appSettings.soundVolume / 100;
+                audio.play().catch(console.error);
+                
+                if (appSettings.vibrationIntensity > 0 && navigator.vibrate) {
+                    navigator.vibrate(appSettings.vibrationIntensity * 10); // تحويل النسبة المئوية إلى مللي ثانية
                 }
                 lastMorningTrigger = currentDay;
             }
@@ -570,13 +569,12 @@ function scheduleNotifications() {
         if (now >= eveningTime && now < new Date(eveningTime.getTime() + 1000)) {
             if (lastEveningTrigger !== currentDay) {
                 showNotification('أذكار المساء', 'حان وقت أذكار المساء');
-                if (appSettings.sound.enabled) {
-                    const audio = new Audio('sounds/notification.mp3');
-                    audio.volume = appSettings.sound.volume / 100;
-                    audio.play().catch(console.error);
-                }
-                if (appSettings.vibration.enabled && navigator.vibrate) {
-                    navigator.vibrate(1000);
+                const audio = new Audio('sounds/notification.mp3');
+                audio.volume = appSettings.soundVolume / 100;
+                audio.play().catch(console.error);
+                
+                if (appSettings.vibrationIntensity > 0 && navigator.vibrate) {
+                    navigator.vibrate(appSettings.vibrationIntensity * 10); // تحويل النسبة المئوية إلى مللي ثانية
                 }
                 lastEveningTrigger = currentDay;
             }
