@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="تطبيق أذكار الصباح والمساء - أذكار المسلم اليومية مع عداد تفاعلي">
+    <meta name="keywords" content="أذكار, أذكار الصباح, أذكار المساء, أذكار المسلم, عداد الأذكار">
+    <meta name="theme-color" content="#4CAF50">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <title>أذكار الصباح والمساء</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icons/icon-192x192.png">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <link rel="stylesheet" href="styles.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Google Fonts - Amiri & Cairo -->
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="theme-toggle">
+            <button id="themeToggle" aria-label="تبديل المظهر">
+                <i class="fas fa-sun"></i>
+                <i class="fas fa-moon"></i>
+            </button>
+            <button id="settingsBtn" aria-label="الإعدادات">
+                <i class="fas fa-cog"></i>
+            </button>
+        </div>
+        <h1>أذكار الصباح والمساء</h1>
+        <div class="daily-quote" id="dailyQuote">
+            <p class="quote-text">لأن أقـعـد مـع قـوم يذكرون الله تعالى من صلاة الغداة حتى تطلع الشمس أحب إلي من أعتق أربعة من ولد إسماعيل، ولأن أقـعـد مـع قـوم يذكرون الله تعالى من صلاة العصر حتى تغرب الشمس أحب إلي من أعتق أربعة من ولد إسماعيل.</p>
+        </div>
+    </header>
+
+    <nav>
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="morning">أذكار الصباح</button>
+            <button class="tab-btn" data-tab="evening">أذكار المساء</button>
+            <button class="tab-btn" data-tab="settings">الإعدادات</button>
+        </div>
+    </nav>
+
+    <main>
+        <section id="morning" class="adhkar-section active">
+            <h2>أذكار الصباح</h2>
+            <div class="adhkar-list" id="morningAdhkar"></div>
+        </section>
+
+        <section id="evening" class="adhkar-section">
+            <h2>أذكار المساء</h2>
+            <div class="adhkar-list" id="eveningAdhkar"></div>
+        </section>
+    </main>
+
+    <!-- نافذة الإعدادات المنبثقة -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content settings-modal">
+            <button id="closeSettings" class="close-modal">×</button>
+            <h2>الإعدادات</h2>
+            <div class="settings-container">
+                <!-- ألوان التطبيق -->
+                <div class="settings-group">
+                    <h3>ألوان التطبيق</h3>
+                    <div class="color-settings">
+                        <div class="theme-options">
+                            <label>
+                                <input type="radio" name="theme" value="default" checked>
+                                <span class="theme-preview default-theme">الألوان الافتراضية</span>
+                            </label>
+                            <label>
+                                <input type="radio" name="theme" value="blue">
+                                <span class="theme-preview blue-theme">الأزرق</span>
+                            </label>
+                            <label>
+                                <input type="radio" name="theme" value="green">
+                                <span class="theme-preview green-theme">الأخضر</span>
+                            </label>
+                            <label>
+                                <input type="radio" name="theme" value="purple">
+                                <span class="theme-preview purple-theme">البنفسجي</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- إعدادات الصوت -->
+                <div class="settings-group">
+                    <h3>الصوت</h3>
+                    <div class="sound-settings">
+                        <label for="soundVolume">مستوى الصوت</label>
+                        <input type="range" id="soundVolume" min="0" max="100" value="50">
+                        <span class="volume-value">50%</span>
+                        <button id="testSound" class="test-btn">اختبار الصوت</button>
+                    </div>
+                </div>
+
+                <!-- إعدادات الاهتزاز -->
+                <div class="settings-group">
+                    <h3>الاهتزاز</h3>
+                    <div class="vibration-settings">
+                        <label for="vibrationIntensity">شدة الاهتزاز</label>
+                        <input type="range" id="vibrationIntensity" min="0" max="100" value="50">
+                        <span class="vibration-value">50%</span>
+                        <button id="testVibration" class="test-btn">اختبار الاهتزاز</button>
+                    </div>
+                </div>
+
+                <!-- إعدادات التنبيهات -->
+                <div class="settings-group">
+                    <h3>التنبيهات</h3>
+                    <div class="notification-settings">
+                        <div class="notification-option">
+                            <label>
+                                <input type="checkbox" id="enableNotifications">
+                                تفعيل التنبيهات
+                            </label>
+                        </div>
+                        <div class="time-settings">
+                            <div class="time-option">
+                                <label for="morningTime">وقت تنبيه أذكار الصباح</label>
+                                <input type="time" id="morningTime" value="05:00">
+                            </div>
+                            <div class="time-option">
+                                <label for="eveningTime">وقت تنبيه أذكار المساء</label>
+                                <input type="time" id="eveningTime" value="17:00">
+                            </div>
+                            <button id="testNotification" class="test-btn">اختبار التنبيه</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-actions">
+                    <button id="saveSettings" class="save-settings-btn">حفظ الإعدادات</button>
+                    <button id="cancelSettings" class="cancel-settings-btn">إلغاء</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>تم التطوير بكل ❤️ لخدمة المسلمين</p>
+        <div class="social-links">
+            <a href="#" aria-label="GitHub"><i class="fab fa-github"></i></a>
+            <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
