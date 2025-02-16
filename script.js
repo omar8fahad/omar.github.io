@@ -516,66 +516,72 @@ function initializeSettings() {
     closeSettings.addEventListener('click', hideSettings);
 }
 
-// Schedule Notifications
+// Schedule Notifications using a per-second check
 function scheduleNotifications() {
+    // إذا كانت التنبيهات غير مفعلة، إلغاء الفاصل الزمني إن وجد
     if (!appSettings.notifications.enabled) {
-        if (window.notificationTimeouts) {
-            window.notificationTimeouts.forEach(timeout => clearTimeout(timeout));
-            window.notificationTimeouts = [];
+        if (window.notificationInterval) {
+            clearInterval(window.notificationInterval);
+            window.notificationInterval = null;
         }
         return;
     }
-
-    // إلغاء أي مؤقتات سابقة
-    if (window.notificationTimeouts) {
-        window.notificationTimeouts.forEach(timeout => clearTimeout(timeout));
+    
+    // إلغاء أي فاصل زمني قائم لتجنب التكرار
+    if (window.notificationInterval) {
+        clearInterval(window.notificationInterval);
     }
-    window.notificationTimeouts = [];
-
-    function scheduleNextNotification(type) {
+    
+    let lastMorningTrigger = null;
+    let lastEveningTrigger = null;
+    
+    window.notificationInterval = setInterval(() => {
         const now = new Date();
-        const targetTime = new Date(now);
+        // الحصول على تاريخ اليوم بصيغة نصية لتتبع التنبيه مرة واحدة في اليوم
+        const currentDay = now.toLocaleDateString();
         
-        const timeStr = type === 'morning' ? appSettings.notifications.morningTime : appSettings.notifications.eveningTime;
-        const [hours, minutes] = timeStr.split(':').map(Number);
+        // حساب وقت التنبيه للصباح
+        const morningTime = new Date(now);
+        const [mH, mMin] = appSettings.notifications.morningTime.split(':').map(Number);
+        morningTime.setHours(mH, mMin, 0, 0);
         
-        targetTime.setHours(hours, minutes, 0, 0);
+        // حساب وقت التنبيه للمساء
+        const eveningTime = new Date(now);
+        const [eH, eMin] = appSettings.notifications.eveningTime.split(':').map(Number);
+        eveningTime.setHours(eH, eMin, 0, 0);
         
-        // إذا مر الوقت اليوم، جدول لليوم التالي
-        if (targetTime <= now) {
-            targetTime.setDate(targetTime.getDate() + 1);
+        // إذا تجاوز الوقت المطلوب للصباح ولم يتم تشغيل التنبيه اليوم
+        if (now >= morningTime && now < new Date(morningTime.getTime() + 1000)) {
+            if (lastMorningTrigger !== currentDay) {
+                showNotification('أذكار الصباح', 'حان وقت أذكار الصباح');
+                if (appSettings.sound.enabled) {
+                    const audio = new Audio('sounds/notification.mp3');
+                    audio.volume = appSettings.sound.volume / 100;
+                    audio.play().catch(console.error);
+                }
+                if (appSettings.vibration.enabled && navigator.vibrate) {
+                    navigator.vibrate(1000);
+                }
+                lastMorningTrigger = currentDay;
+            }
         }
         
-        const timeUntilNotification = targetTime - now;
-        
-        const timeout = setTimeout(() => {
-            const message = type === 'morning' ? 'حان وقت أذكار الصباح' : 'حان وقت أذكار المساء';
-            const title = type === 'morning' ? 'أذكار الصباح' : 'أذكار المساء';
-            
-            showNotification(title, message);
-            
-            if (appSettings.sound.enabled) {
-                const audio = new Audio('sounds/notification.mp3');
-                audio.volume = appSettings.sound.volume / 100;
-                audio.play().catch(console.error);
+        // إذا تجاوز الوقت المطلوب للمساء ولم يتم تشغيل التنبيه اليوم
+        if (now >= eveningTime && now < new Date(eveningTime.getTime() + 1000)) {
+            if (lastEveningTrigger !== currentDay) {
+                showNotification('أذكار المساء', 'حان وقت أذكار المساء');
+                if (appSettings.sound.enabled) {
+                    const audio = new Audio('sounds/notification.mp3');
+                    audio.volume = appSettings.sound.volume / 100;
+                    audio.play().catch(console.error);
+                }
+                if (appSettings.vibration.enabled && navigator.vibrate) {
+                    navigator.vibrate(1000);
+                }
+                lastEveningTrigger = currentDay;
             }
-            
-            if (appSettings.vibration.enabled) {
-                navigator.vibrate(1000);
-            }
-            
-            // جدولة التنبيه التالي
-            scheduleNextNotification(type);
-        }, timeUntilNotification);
-        
-        window.notificationTimeouts.push(timeout);
-        
-        console.log(`تم جدولة تنبيه ${type} في ${targetTime.toLocaleTimeString()}`);
-    }
-
-    // جدولة كلا التنبيهين
-    scheduleNextNotification('morning');
-    scheduleNextNotification('evening');
+        }
+    }, 1000);
 }
 
 // Initialize settings when DOM is loaded
