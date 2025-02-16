@@ -505,37 +505,56 @@ function initializeSettings() {
 // Schedule Notifications
 function scheduleNotifications() {
     if (!appSettings.notifications.enabled) return;
-    
+
+    // تحويل أوقات التنبيه إلى كائنات Date
     const now = new Date();
     const morningTime = new Date();
     const eveningTime = new Date();
     
-    // Set morning notification time
+    // تحديث التواريخ بالأوقات المحددة
     const [morningHours, morningMinutes] = appSettings.notifications.morningTime.split(':');
-    morningTime.setHours(parseInt(morningHours), parseInt(morningMinutes), 0);
-    
-    // Set evening notification time
     const [eveningHours, eveningMinutes] = appSettings.notifications.eveningTime.split(':');
-    eveningTime.setHours(parseInt(eveningHours), parseInt(eveningMinutes), 0);
     
-    // If time has passed for today, schedule for tomorrow
-    if (morningTime <= now) {
+    morningTime.setHours(parseInt(morningHours), parseInt(morningMinutes), 0);
+    eveningTime.setHours(parseInt(eveningHours), parseInt(eveningMinutes), 0);
+
+    // إذا مر وقت اليوم، جدول لليوم التالي
+    if (morningTime < now) {
         morningTime.setDate(morningTime.getDate() + 1);
     }
-    if (eveningTime <= now) {
+    if (eveningTime < now) {
         eveningTime.setDate(eveningTime.getDate() + 1);
     }
-    
-    // Schedule notifications
-    setTimeout(() => {
-        showNotification('أذكار الصباح', 'حان وقت أذكار الصباح');
-        scheduleNotifications(); // Reschedule for next day
-    }, morningTime - now);
-    
-    setTimeout(() => {
-        showNotification('أذكار المساء', 'حان وقت أذكار المساء');
-        scheduleNotifications(); // Reschedule for next day
-    }, eveningTime - now);
+
+    // التحقق من الوقت كل دقيقة
+    setInterval(() => {
+        const currentTime = new Date();
+        
+        // تنسيق الوقت الحالي للمقارنة
+        const currentTimeStr = currentTime.getHours().toString().padStart(2, '0') + ':' + 
+                             currentTime.getMinutes().toString().padStart(2, '0');
+        
+        // تنبيه الصباح
+        if (currentTimeStr === appSettings.notifications.morningTime) {
+            showNotification('أذكار الصباح', 'حان وقت أذكار الصباح');
+            playNotificationSound();
+        }
+        
+        // تنبيه المساء
+        if (currentTimeStr === appSettings.notifications.eveningTime) {
+            showNotification('أذكار المساء', 'حان وقت أذكار المساء');
+            playNotificationSound();
+        }
+    }, 60000); // فحص كل دقيقة
+}
+
+// تشغيل صوت التنبيه
+function playNotificationSound() {
+    if (appSettings.sound.enabled) {
+        const audio = new Audio('sounds/notification.mp3');
+        audio.volume = appSettings.sound.volume / 100;
+        audio.play();
+    }
 }
 
 // Initialize settings when DOM is loaded
