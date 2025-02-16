@@ -504,43 +504,64 @@ function initializeSettings() {
 
 // Schedule Notifications
 function scheduleNotifications() {
-    if (!appSettings.notifications.enabled) return;
-
-    function checkTime() {
-        const now = new Date();
-        const currentHours = now.getHours();
-        const currentMinutes = now.getMinutes();
-        
-        // تنسيق الوقت الحالي
-        const currentTimeStr = `${currentHours.toString().padStart(2, '0')}:${currentMinutes.toString().padStart(2, '0')}`;
-        
-        // فحص وقت الصباح
-        if (currentTimeStr === appSettings.notifications.morningTime) {
-            showNotification('أذكار الصباح', 'حان وقت أذكار الصباح');
-            playNotificationSound();
-            if (appSettings.vibration.enabled) {
-                navigator.vibrate(1000);
-            }
+    if (!appSettings.notifications.enabled) {
+        if (window.notificationTimeouts) {
+            window.notificationTimeouts.forEach(timeout => clearTimeout(timeout));
+            window.notificationTimeouts = [];
         }
-        
-        // فحص وقت المساء
-        if (currentTimeStr === appSettings.notifications.eveningTime) {
-            showNotification('أذكار المساء', 'حان وقت أذكار المساء');
-            playNotificationSound();
-            if (appSettings.vibration.enabled) {
-                navigator.vibrate(1000);
-            }
-        }
+        return;
     }
 
-    // فحص فوري عند تفعيل التنبيهات
-    checkTime();
-    
-    // فحص كل دقيقة
-    const intervalId = setInterval(checkTime, 30000);
-    
-    // حفظ معرف الفاصل الزمني للتمكن من إيقافه لاحقاً إذا تم تعطيل التنبيهات
-    window.notificationInterval = intervalId;
+    // إلغاء أي مؤقتات سابقة
+    if (window.notificationTimeouts) {
+        window.notificationTimeouts.forEach(timeout => clearTimeout(timeout));
+    }
+    window.notificationTimeouts = [];
+
+    function scheduleNextNotification(type) {
+        const now = new Date();
+        const targetTime = new Date(now);
+        
+        const timeStr = type === 'morning' ? appSettings.notifications.morningTime : appSettings.notifications.eveningTime;
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        
+        targetTime.setHours(hours, minutes, 0, 0);
+        
+        // إذا مر الوقت اليوم، جدول لليوم التالي
+        if (targetTime <= now) {
+            targetTime.setDate(targetTime.getDate() + 1);
+        }
+        
+        const timeUntilNotification = targetTime - now;
+        
+        const timeout = setTimeout(() => {
+            const message = type === 'morning' ? 'حان وقت أذكار الصباح' : 'حان وقت أذكار المساء';
+            const title = type === 'morning' ? 'أذكار الصباح' : 'أذكار المساء';
+            
+            showNotification(title, message);
+            
+            if (appSettings.sound.enabled) {
+                const audio = new Audio('sounds/notification.mp3');
+                audio.volume = appSettings.sound.volume / 100;
+                audio.play().catch(console.error);
+            }
+            
+            if (appSettings.vibration.enabled) {
+                navigator.vibrate(1000);
+            }
+            
+            // جدولة التنبيه التالي
+            scheduleNextNotification(type);
+        }, timeUntilNotification);
+        
+        window.notificationTimeouts.push(timeout);
+        
+        console.log(`تم جدولة تنبيه ${type} في ${targetTime.toLocaleTimeString()}`);
+    }
+
+    // جدولة كلا التنبيهين
+    scheduleNextNotification('morning');
+    scheduleNextNotification('evening');
 }
 
 // Initialize settings when DOM is loaded
