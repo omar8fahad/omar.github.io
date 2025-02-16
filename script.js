@@ -347,6 +347,20 @@ function saveSettings() {
         appSettings = { ...tempSettings };
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(appSettings));
         applySettings(appSettings);
+        
+        // إعادة جدولة التنبيهات بعد حفظ الإعدادات
+        if (appSettings.notifications.enabled) {
+            requestNotificationPermission().then(() => {
+                scheduleNotifications();
+            });
+        } else {
+            // إلغاء التنبيهات إذا تم تعطيلها
+            if (window.notificationTimeouts) {
+                window.notificationTimeouts.forEach(timeout => clearTimeout(timeout));
+                window.notificationTimeouts = [];
+            }
+        }
+        
         hideSettings();
     } catch (error) {
         handleError(error, 'Saving settings');
